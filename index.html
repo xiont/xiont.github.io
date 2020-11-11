@@ -1,0 +1,262 @@
+<!doctypehtml>
+    <html lang=en-us>
+
+    <head>
+        <meta charset=utf-8>
+        <meta content="text/html; charset=utf-8" http-equiv=Content-Type>
+        <title>Emscripten-Generated Code</title>
+        <style>
+            .emscripten {
+                padding-right: 0;
+                margin-left: auto;
+                margin-right: auto;
+                display: block
+            }
+
+            textarea.emscripten {
+                font-family: monospace;
+                width: 80%
+            }
+
+            div.emscripten {
+                text-align: center
+            }
+
+            div.emscripten_border {
+                border: 1px solid #000
+            }
+
+            canvas.emscripten {
+                border: 0 none;
+                background-color: #000
+            }
+
+            .spinner {
+                height: 50px;
+                width: 50px;
+                margin: 0 auto;
+                -webkit-animation: rotation .8s linear infinite;
+                -moz-animation: rotation .8s linear infinite;
+                -o-animation: rotation .8s linear infinite;
+                animation: rotation .8s linear infinite;
+                border-left: 10px solid #0096f0;
+                border-right: 10px solid #0096f0;
+                border-bottom: 10px solid #0096f0;
+                border-top: 10px solid #6400c8;
+                border-radius: 100%;
+                background-color: #c864fa
+            }
+
+            @-webkit-keyframes rotation {
+                from {
+                    -webkit-transform: rotate(0)
+                }
+
+                to {
+                    -webkit-transform: rotate(360deg)
+                }
+            }
+
+            @-moz-keyframes rotation {
+                from {
+                    -moz-transform: rotate(0)
+                }
+
+                to {
+                    -moz-transform: rotate(360deg)
+                }
+            }
+
+            @-o-keyframes rotation {
+                from {
+                    -o-transform: rotate(0)
+                }
+
+                to {
+                    -o-transform: rotate(360deg)
+                }
+            }
+
+            @keyframes rotation {
+                from {
+                    transform: rotate(0)
+                }
+
+                to {
+                    transform: rotate(360deg)
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1> Row Constraint Magic Square Generation</h1>
+
+        Please Input a Magic Square (there is a example in the following textarea):
+        <textarea class="emscripten" id="magic-square" rows=10>
+            29 67 14 22 46 49 92 78 25 83 
+            72 79 84 17 26 42 24 74 44 43 
+            33 16 31 45 63 64 85 39 38 91 
+            82 34 65 75 76 51 3 56 15 48 
+            21 5 62 10 88 60 66 6 94 93 
+            81 12 52 99 2 41 71 47 80 20 
+            50 100 11 53 90 35 1 32 96 37 
+            61 70 57 9 87 68 54 58 28 13 
+            7 95 89 98 19 59 86 18 30 4 
+            69 27 40 77 8 36 23 97 55 73 
+        </textarea>
+        <hr>
+        Constraint Condition:
+        <input name="is_first_row" value="1" type="radio" title="first row"> first row;
+        <input name="is_first_row" value="0" type="radio" title="last row" checked="checked"> last row.
+
+        <hr>
+
+        <button class="mybutton">Generate Constraint Magic Square</button>
+        <button class="initial-btn">Initial Magic Square</button>
+
+        <hr>
+        <h2>Result:</h2>
+        <p id="result">
+
+        </p>
+        <hr>
+        <h2>Speed Test</h2>
+        <button class="test1"> test </button>
+        <p id="test-result">
+
+        </p>
+
+        <script>
+
+
+            var buffer = new Uint8Array(100);
+            function stringToByte(str) {
+                var len, c;
+                len = str.length;
+                var bytes = [];
+                for (var i = 0; i < len; i++) {
+                    c = str.charCodeAt(i);
+                    bytes.push(c & 0xFF);
+
+                }
+                return new Int8Array(bytes);
+            }
+
+            function byteToString(bytes) {
+                var str = '';
+                for (var i = 0; i < bytes.length; i++) {
+                    str += String.fromCharCode(bytes[i]);
+                }
+                return str;
+            }
+
+            function GetRadioValue(RadioName) {
+                var obj;
+                obj = document.getElementsByName(RadioName);
+                if (obj != null) {
+                    var i;
+                    for (i = 0; i < obj.length; i++) {
+                        if (obj[i].checked) {
+                            return obj[i].value;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            document.querySelector('.mybutton')
+                .addEventListener('click', function () {
+                    var result = Module.ccall(
+                        'calculate_constraint_magic_square',	// name of C function 
+                        'string',	// return type
+                        ['string'],	// argument types
+                        ["0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"]	// arguments
+                    );
+
+                    str_num_list = stringToByte(result);
+                    str2 = "";
+                    for (var i = 0; i < 10; i++) {
+                        for (var j = 0; j < 10; j++) {
+                            str2 += str_num_list[i * 10 + j] + " ";
+                        }
+                        str2 += "\n";
+                    }
+
+
+                    document.getElementById("result").innerText = str2;  //stringToByte(result);
+                    // var buffer = new Uint8Array(result);
+                    // for (var i = 0; i < buffer.length; i++) {
+                    //     console.log(int(buffer[i]));
+                    // }
+                });
+
+            document.querySelector('.initial-btn')
+                .addEventListener('click', function () {
+                    var magic_string = document.getElementById("magic-square").value.trim();
+
+                    var magic_string_list = magic_string.split("\n");
+
+                    magic_bytes_list = []
+
+                    for (var i = 0; i < magic_string_list.length; i++) {
+                        magic_num_list = magic_string_list[i].trim().split(" ");
+                        for (var j = 0; j < magic_num_list.length; j++) {
+                            magic_bytes_list.push(parseInt(magic_num_list[j]) & 0xFF);
+                        }
+                    }
+
+                    console.log(magic_bytes_list);
+
+                    console.log(byteToString(magic_bytes_list));
+
+                    var result = Module.ccall(
+                        'reset_initial_magic_square',	// name of C function 
+                        null,	// return type
+                        ['string', 'bool'],	// argument types
+                        [byteToString(magic_bytes_list), GetRadioValue("is_first_row")]	// arguments
+                    );
+                });
+
+            document.querySelector('.test1')
+                .addEventListener('click', function () {
+
+                    var start = window.performance.now();
+
+                    for (var i = 0; i < 100; i++) {
+
+                        var result = Module.ccall(
+                            'calculate_constraint_magic_square',	// name of C function 
+                            'string',	// return type
+                            ['string'],	// argument types
+                            ["0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"]	// arguments
+                        );
+                    }
+                    var end = window.performance.now();
+                    console.log(100 * 1000 / (end - start));
+                    document.getElementById("test-result").innerText += 100 * 1000 / (end - start) + " magic squares/second \n"
+
+                    str_num_list = stringToByte(result);
+                    str2 = "";
+                    for (var i = 0; i < 10; i++) {
+                        for (var j = 0; j < 10; j++) {
+                            str2 += str_num_list[i * 10 + j] + " ";
+                        }
+                        str2 += "\n";
+                    }
+
+
+                    document.getElementById("result").innerText = str2;  //stringToByte(result);
+                    // var buffer = new Uint8Array(result);
+                    // for (var i = 0; i < buffer.length; i++) {
+                    //     console.log(int(buffer[i]));
+                    // }
+                });
+
+
+        </script>
+
+        <script async src=PoI.js></script>
+    </body>
+
+    </html>
